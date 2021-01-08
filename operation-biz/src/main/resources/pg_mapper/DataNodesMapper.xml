@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.pg_mapper.DataNodesMapper">
+
+
+    <!--数据节点列表-->
+    <select id="getDtataNodeList" resultType="com.nvxclouds.operation.biz.dto.DataNodeDTO">
+            <!--        SELECT
+                            tabA.dataNodeId,
+                            tabA.nodeName,
+                            tabA.organization,
+                            tabA.createdTime,
+                            tabA.area,
+                            tabA.url,
+                            tabA.status
+                    FROM
+                   (
+                            SELECT
+                            dns.id dataNodeId,
+                            dns.name nodeName,
+                            '暂无数据' as organization,
+                            /*dns.created as createdTime,*/
+                            substr(to_char(dns.created,'YYYY-MM-DD hh24:mi:ss'),0,20) as createdTime,
+                            dns.area,
+                            dns.url,
+                            dns.status,
+                            to_char(dns.created,'YYYY-MM-DD hh24:mi:ss') as timeQ
+                            FROM
+                            datanodes dns
+
+                    ) tabA where  1 = 1
+
+                    <if test="query.status!=null and query.status!=''">
+                        AND tabA.status = #{query.status}
+                    </if>
+                    <if test="query.startTime!=null and query.startTime!=''">
+                        AND tabA.timeQ &gt;= #{query.startTime}
+                    </if>
+                    <if test="query.endTime!=null and query.endTime!=''">
+                        AND tabA.timeQ &lt;= #{query.endTime}
+                    </if>-->
+                    SELECT
+                            tabA.dataNodeId,
+                            tabA.nodeName,
+                            tabA.organization,
+                            tabA.createdTime,
+                            tabA.area,
+                            tabA.url,
+                            tabA.status,
+                            tabA.isBlocked
+                    FROM
+                    (
+                            SELECT
+                            dns.id dataNodeId,
+                            dns.name nodeName,
+                            '暂无数据' as organization,
+                            /*dns.created as createdTime,*/
+                            substr(to_char(dns.created,'YYYY-MM-DD hh24:mi:ss'),0,20) as createdTime,
+                            dns.area,
+                            dns.url,
+                            dns.status,
+                            to_char(dns.created,'YYYY-MM-DD hh24:mi:ss') as timeQ,
+                            CASE
+                            WHEN bn.id ISNULL THEN FALSE
+                            /*WHEN bn.id='' THEN FALSE*/
+                            ELSE TRUE
+                            END isBlocked
+                            FROM
+                            datanodes dns LEFT JOIN black_name bn ON bn.resource_id = dns.id
+                            WHERE 1=1
+                    ) tabA where  1 = 1
+                    <if test="query.status!=null and query.status!=''">
+                        AND tabA.status = #{query.status}
+                    </if>
+                    <if test="query.startTime!=null and query.startTime!=''">
+                        AND tabA.timeQ &gt;= #{query.startTime}
+                    </if>
+                    <if test="query.endTime!=null and query.endTime!=''">
+                        AND tabA.timeQ &lt;= #{query.endTime}
+                    </if>
+    </select>
+
+    <!--数据节点报表查询-->
+    <!--to see https://www.cnblogs.com/mozq/p/12079972.html-->
+    <resultMap type="com.nvxclouds.operation.biz.dto.DataNodeReporDTO" id="areaMap">
+        <id column="areaName" property="areaName"/>
+        <collection property="list" ofType="com.nvxclouds.operation.biz.dto.DataNodeStatusDataDTO">
+            <result column="status" property="status"/><!-- property对应JavaBean中的属性名 -->
+            <result column="count" property="count"/>
+        </collection>
+    </resultMap>
+
+    <select id="repor"  resultMap="areaMap">
+	                SELECT
+                        tabA.area areaName,
+                        tabA.status,
+                        count(tabA.id) count
+                    FROM
+                    (
+                         SELECT * FROM datanodes dns WHERE dns.status IN ('ALIVE','NOT COLLECTED','BLOCKED')
+                    ) as tabA
+                    WHERE 1 = 1 GROUP BY  tabA.area,tabA.status
+	</select>
+
+
+
+    <!--
+        该方法过期(废弃)
+        数据提供方黑名单列表查询
+        blackNameType=1表示个人研究者黑名单 2表示企业研究者黑名单  3表示数据提供者黑名单
+    -->
+    <select id="dataProviderList" resultType="com.nvxclouds.operation.biz.dto.DataProviderBlackNameDTO">
+                    SELECT
+                            dns.id,
+                            dns.created createdTime,
+                            dns.name nodeName,
+                            '暂无机构数据'  organization,
+                            dns.area,
+                            '暂无联系人数据' conactName
+                    FROM
+                    (
+                        SELECT
+                        resource_id
+                        FROM
+                        black_name
+                        WHERE
+                        black_name_type = 3
+                    ) bname   LEFT JOIN  datanodes dns ON dns.id = bname.resource_id
+                    WHERE 1 = 1
+                    <if test="query.userName!=null and query.userName!=''">
+                        AND  dns.username  LIKE concat('%',#{query.userName},'%')
+                    </if>
+                    <if test="query.nodeName!=null and query.nodeName!=''">
+                        AND  dns.name  LIKE concat('%',#{query.nodeName},'%')
+                    </if>
+    </select>
+
+
+    <!--数据节点黑名单列表(有效在用)-->
+    <select id="queryDataNodeBlackNameList" resultType="com.nvxclouds.operation.biz.dto.DataNodeBlackNameListDTO">
+                    SELECT
+                            dns.id,
+                            dns.name nodeName,
+                            '暂无所属机构' as  organizationName,
+                            dns.area,
+                            '暂无联系人' as concatName,
+                            dns.username userName,
+                            to_char(dns.created,'YYYY-MM-DD hh24:mi:ss') as createdTime
+                    FROM
+                            black_name bn
+                    LEFT JOIN datanodes dns ON dns. ID = bn.resource_id
+                    WHERE 1=1
+                    <if test="query.userName!=null and query.userName!=''">
+                        AND  dns.username  LIKE concat('%',#{query.userName},'%')
+                    </if>
+                    <if test="query.nodeName!=null and query.nodeName!=''">
+                        AND  dns.name  LIKE concat('%',#{query.nodeName},'%')
+                    </if>
+                    <if test="query.organizationName!=null and query.organizationName!=''">
+                    </if>
+                    ORDER BY dns.created DESC
+    </select>
+
+
+    <!--正在运行的研究列表-->
+    <select id="queryRunningStudies" resultType="com.nvxclouds.operation.biz.dto.RunningStudyListDTO">
+                    SELECT
+                            *
+                    FROM
+                    (
+                                            (
+                                                                        SELECT
+                                                                            name,
+                                                                            method,
+                                                                            username userName,
+                                                                            created createdTime,
+                                                                            description,
+                                                                            CASE
+                                                                            WHEN privacy=0 THEN '公开'
+                                                                            WHEN privacy=1 THEN '隐私'
+                                                                            END  visibility
+                                                                        FROM
+                                                                            studies
+                                                                        WHERE
+                                                                            status IN ('In Process')
+                                            )
+                                            UNION ALL
+                                            (
+                                                                    SELECT
+                                                                        name,
+                                                                        method,
+                                                                        username userName,
+                                                                        created_at createdTime,
+                                                                        description,
+                                                                        CASE
+                                                                        WHEN privacy=0 THEN '公开'
+                                                                        WHEN privacy=1 THEN '隐私'
+                                                                        END  visibility
+                                                                    FROM
+                                                                        composite_study
+                                                                    WHERE
+                                                                        status IN ('In Process')
+                                            )
+                    ) tabA WHERE 1=1 ORDER BY tabA.createdTime DESC
+    </select>
+
+
+    <!--查询数据提供方排名列表-->
+    <select id="topXDataProvider" resultType="com.nvxclouds.operation.biz.dto.TopDTO">
+        SELECT tabA.* FROM
+
+                   ( SELECT
+                        ROW_NUMBER() OVER() as index,
+                        area,
+                        COUNT (*) dataCount
+                    FROM
+                        datanodes dns
+                    WHERE
+                        1 = 1
+                    GROUP BY
+                        area
+                    ORDER BY
+                        dataCount DESC
+                    ) as  tabA
+                    WHERE 1=1
+                    <if test="area!=null and area!=''">
+                        AND  tabA.area  LIKE concat('%',#{area},'%')
+                    </if>
+                    <if test="topNum!=null and topNum!=''">
+                        LIMIT #{topNum}
+                    </if>
+    </select>
+
+
+    <!--数据提供方分布图数据-->
+    <select id="dataMap" resultType="com.nvxclouds.operation.biz.dto.DataMapDTO">
+                    SELECT
+                        area,
+                        COUNT (*) dataProviderCount
+                    FROM
+                        datanodes dns
+                    WHERE
+                        1 = 1
+                    GROUP BY
+                        area
+    </select>
+
+</mapper>

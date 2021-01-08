@@ -1,0 +1,114 @@
+# curl --header "Content-Type: multipart/form-data"
+#  -F "study_id=guo"
+#  -F 'TCGA_DU_6400_19830518_26.tif=@../example/images/TCGA_DU_6400_19830518_26.tif'
+#  -F '20771591780693_.pic.jpg=@../example/images/20771591780693_.pic.jpg'
+#  http://localhost:8080/uploads
+POST http://192.168.10.100:8080/uploads
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="study_id"
+
+guo
+--WebAppBoundary
+Content-Disposition: form-data; name="TCGA_DU_6400_19830518_26.tif"; filename="TCGA_DU_6400_19830518_26.tif"
+
+< /Users/Albert/Downloads/WX20200610-143834@2x.png
+--WebAppBoundary
+Content-Disposition: form-data; name="20771591780693_.pic.jpg"; filename="20771591780693_.pic.jpg"
+
+< /Users/Albert/Downloads/WX20200610-143834@2x.png
+--WebAppBoundary--
+
+
+
+
+###
+
+### 查询数据集申请列表
+GET http://192.168.50.222:10410/dataSet/application/
+
+### 查询数据集申请详情
+GET http://192.168.50.222:10410/dataSet/application/1
+
+### 数据集申请审批
+POST http://127.0.0.1:10010/cQwq61E2ci99/dataSet/application
+Content-Type: application/json
+ts: 1592050916832
+token: b29af1dc1fc1209ba8bb0afd32deb426
+
+{
+  "pass": 1,
+  "ts": "1592050763213",
+  "token": "7e3c7844341d212be2fe26f97498a6e7"
+
+}
+
+### 数据集申请审批
+POST http://127.0.0.1:8199/dataSet/application
+Content-Type: application/json
+
+{
+  "pass": 1,
+  "ts": "1592044945126",
+  "token": "7e3c7844341d212be2fe26f97498a6e7"
+
+}
+
+### query study project by page
+GET http://192.168.50.222:10410/studyProject?projeName=项目
+
+
+### query study project application by page
+GET http://192.168.50.222:10410/studyProject/application?researcherName&startTime="2020-06-01 23:07:43"
+
+###
+GET http://127.0.0.1:10410/dataNode/network
+
+
+###
+GET http://127.0.0.1:10410/dataNode/distribution
+
+###
+GET http://127.0.0.1:10410/dataNode/1/distribution/detail
+
+###
+GET http://127.0.0.1:10410/dataSet/usage
+
+###
+GET http://127.0.0.1:10010/ms1/dataSet/usage
+
+###
+GET http://127.0.0.1:10010/image99/dataSet/usage
+
+###
+GET http://127.0.0.1:10010/cQwq61E2ci99/dataSet/usage?ts=1592044945126&token=7e3c7844341d212be2fe26f97498a6e7
+
+###
+GET http://127.0.0.1:10410/dataSet/statistics?startTime=2020-05-30
+
+###
+GET http://127.0.0.1:10410/dataSet/report/study
+
+###
+GET http://127.0.0.1:10410/dataSet/report/visible
+
+###
+GET http://127.0.0.1:10410/dataSet/report/status
+
+
+### 数据集申请审批
+POST http://127.0.0.1:10410/emergencyOrder
+Content-Type: application/json
+
+{
+  "orderType": "0",
+  "contentType": "0",
+  "bizId": 2,
+  "processingType": "1",
+  "description": "aaa",
+  "userId": 2
+}
+
+
+

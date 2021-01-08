@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.pg_mapper.DataSetsMapper">
+
+
+    <!--数据集列表-->
+    <select id="getDataSetsList" resultType="com.nvxclouds.operation.biz.dto.DataSetDTO">
+                            SELECT
+                                    tabA.id,
+                                    tabA.dataSetName,
+                                    tabA.fileName,
+                                    tabA.createTime,
+                                    tabA.parentNode,
+                                    tabA.organization,
+                                    tabA.methods,
+                                    tabA.status
+                            FROM
+                            (
+                                    SELECT
+                                    dts."id",
+                                    dts."name" dataSetName,
+                                    dts.filename fileName,
+                              /*      dts.created createTime,*/
+                                    substr(to_char(dts.created,'YYYY-MM-DD hh24:mi:ss'),0,20) createTime,
+                                    dds."name" parentNode,
+                                    '暂无数据' as organization,
+                                    dts.methods,
+                                    dts.status,
+                                    substr(to_char(dts.created,'YYYY-MM-DD hh24:mi:ss'),0,19) as timeQ
+                                    FROM
+                                    datasets dts LEFT JOIN datanodes dds ON dts.datanode_id = dds."id"
+                                    WHERE dts.status != 'DELETED'
+                            )  tabA where  1 = 1
+
+                            <if test="query.status!=null and query.status!=''">
+                                AND tabA.status = #{query.status}
+                            </if>
+                            <if test="query.startTime!=null and query.startTime!=''">
+                                AND tabA.timeQ &gt;= #{query.startTime}
+                            </if>
+                            <if test="query.endTime!=null and query.endTime!=''">
+                                AND tabA.timeQ &lt;= #{query.endTime}
+                            </if>
+    </select>
+
+    <!--系统资源列表-->
+    <select id="resources" resultType="com.nvxclouds.operation.biz.dto.ResourcesDTO">
+                SELECT
+                        dns.name nodeName,
+                        si.ip,
+                        si.ping net,
+                        si.cpu_usage cpuUsage,
+                        si.mem_usage memUsage
+                FROM
+                        system_info si
+                LEFT JOIN datanodes dns ON si.central_id = dns.id
+                WHERE 1 = 1
+                <if test="nodeName!=null and nodeName!=''">
+                    AND dns.name LIKE concat('%',#{nodeName},'%')
+                </if>
+    </select>
+
+
+    <!--数据集报表查询-->
+    <resultMap type="com.nvxclouds.operation.biz.dto.DataNodeReporDTO" id="areaMap">
+        <id column="areaName" property="areaName"/>
+        <collection property="list" ofType="com.nvxclouds.operation.biz.dto.DataNodeStatusDataDTO">
+            <result column="status" property="status"/>
+            <result column="count" property="count"/>
+        </collection>
+    </resultMap>
+
+    <select id="repor"  resultMap="areaMap">
+	            SELECT
+                    tabA.area areaName,
+                    tabA.status,
+                    count(tabA.id) count
+                FROM
+                (
+                        SELECT
+                            dss.*,
+                            dns.area
+                        FROM
+                            datasets dss
+                        LEFT JOIN datanodes dns ON dns."id" = dss.datanode_id
+                        WHERE dss.status IN ('ALIVE','OFFLINE')
+                ) tabA
+                WHERE 1 = 1 GROUP BY  tabA.area,tabA.status
+	</select>
+
+
+    <!--数据集按照研究方法统计报表-->
+    <select id="byStudyMethodCount" resultType="com.nvxclouds.operation.biz.dto.DataSetStudyMethodCount">
+                SELECT
+                  am.name  methodName,
+                  count(*) dataSetCount
+                FROM
+                    analysis_method am
+                LEFT JOIN (
+                    SELECT
+                        id
+                    FROM
+                        datasets
+                    WHERE
+                        status != 'DELETED'
+                ) tabA ON tabA.id = am.dataset_id
+                GROUP BY am.name
+    </select>
+
+
+
+
+
+    <!--按日统计数据集使用列表-->
+    <select id="byDayCount" resultType="com.nvxclouds.operation.biz.dto.DataSetDayMonthDTO">
+                SELECT
+                        *
+                FROM
+                        (
+                        SELECT
+                           tabA.dataSetName,
+                           tabA.groupTime,
+                           count(*) count,
+                           '暂无数据' organization
+                        FROM
+                        (
+                        SELECT
+                          dss."name" dataSetName,
+                          '暂无数据' organizitionName,
+                          substr(to_char(to_timestamp(dus."time"), 'YYYY-MM-DD HH24:MI:SS'), 0 , 11) as groupTime
+                        FROM
+                            dataset_usage_statistics dus
+                        LEFT JOIN datasets dss ON dus.data_set_id=dss."id"
+                        LEFT JOIN datanodes dns ON dns."id" = dss.datanode_id
+                        WHERE 1=1
+                        ) tabA WHERE 1 = 1 GROUP BY tabA.dataSetName,tabA.groupTime
+                ) tabB
+                WHERE 1=1
+                <if test="query.startTime!=null and query.startTime!=''">
+                    AND tabB.groupTime &gt;= #{query.startTime}
+                </if>
+                <if test="query.endTime!=null and query.endTime!=''">
+                    AND tabB.groupTime &lt;= #{query.endTime}
+                </if>
+    </select>
+
+    <!--按月统计数据集使用列表-->
+    <select id="byMonthCount" resultType="com.nvxclouds.operation.biz.dto.DataSetDayMonthDTO">
+                SELECT
+                            *
+                FROM
+                (
+                            SELECT
+                            tabA.dataSetName,
+                            tabA.groupTime,
+                            count(*) count,
+                            '暂无数据' organization
+                            FROM
+                            (
+                            SELECT
+                            dss."name" dataSetName,
+                            '暂无数据' organizitionName,
+                            substr(to_char(to_timestamp(dus.time), 'YYYY-MM-DD HH24:MI:SS'), 0 , 8) as groupTime
+                            FROM
+                            dataset_usage_statistics dus
+                            LEFT JOIN datasets dss ON dus.data_set_id=dss.id
+                            LEFT JOIN datanodes dns ON dns."id" = dss.datanode_id
+                            WHERE 1=1
+                            ) tabA WHERE 1 = 1 GROUP BY tabA.dataSetName,tabA.groupTime
+                ) tabB
+                WHERE 1=1
+                <if test="query.startTime!=null and query.startTime!=''">
+                    AND tabB.groupTime &gt;= #{query.startTime}
+                </if>
+                <if test="query.endTime!=null and query.endTime!=''">
+                    AND tabB.groupTime &lt;= #{query.endTime}
+                </if>
+    </select>
+
+
+
+    <!--查询数据集历史使用列表-->
+    <select id="usedCountList" resultType="com.nvxclouds.operation.biz.dto.DataSetUsedDTO">
+                    SELECT
+                      *
+                    FROM
+                    (
+                    SELECT
+                      tabA.id,
+                      tabA.dataSetName,
+                      tabA.organization,
+                      tabA.filename,
+                      dns.area,
+                      substr(to_char(tabA.createdTime,'YYYY-MM-DD hh24:mi:ss'),0,20) createTime,
+                      tabA.usedCount
+                    FROM
+                    (
+                          SELECT
+                              dss.id,
+                              dss.datanode_id,
+                              dss.name dataSetName,
+                              '暂无所属机构' organization,
+                              dss.filename,
+                              dss.created createdTime,
+                              count(dus.id) usedCount
+                           FROM
+                                datasets dss
+                              LEFT JOIN dataset_usage_statistics dus ON dss. ID = dus.data_set_id
+                           WHERE dss.status != 'DELETED' GROUP BY dss.id
+                    ) tabA LEFT JOIN datanodes dns ON dns.id = tabA.datanode_id WHERE 1=1
+                    ) tabB WHERE 1=1
+                    <if test="query.organization!=null and query.organization!=''">
+                        AND tabB.organization LIKE concat('%',#{query.organization},'%')
+                    </if>
+                    <if test="query.area!=null and query.area!=''">
+                        AND tabB.area LIKE concat('%',#{query.area},'%')
+                    </if>
+                    <if test="query.dataSetName!=null and query.dataSetName!=''">
+                        AND tabB.dataSetName LIKE concat('%',#{query.dataSetName},'%')
+                    </if>
+                    ORDER BY tabB.usedCount DESC
+    </select>
+
+
+</mapper>

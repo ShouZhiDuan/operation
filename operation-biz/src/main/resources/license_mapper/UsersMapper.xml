@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.license_mapper.UsersMapper">
+
+    <!--查询个人研究者列表数据-->
+    <select id="queryIndividualResearchers" resultType="com.nvxclouds.operation.biz.dto.IndividualResearchListDTO">
+            SELECT
+                    *
+            FROM
+            (
+                    SELECT
+                            us.id,
+                            us.username userName,
+                            concat(us.frist_name,us.last_name) realName,
+                            us.phone,
+                            us.email,
+                            us.id_code idCode,
+                            us.address,
+                            us.company_name companyName,
+                            us.status,
+                            CASE
+                            WHEN  rb.id ISNULL THEN FALSE
+                            WHEN  rb.id='' THEN FALSE
+                            ELSE TRUE
+                            END isBlocked
+                    FROM
+                            users us LEFT JOIN researcher_blacklist rb ON rb.user_id = us.id
+                    WHERE   us.user_type IN ('INDIVIDUAL')
+            ) tabA  WHERE 1=1
+            <if test="query.userName!=null and query.userName!=''">
+                AND tabA.userName LIKE concat('%',#{query.userName},'%')
+            </if>
+            <if test="query.realName!=null and query.realName!=''">
+                AND tabA.realName LIKE concat('%',#{query.realName},'%')
+            </if>
+            <if test="query.companyName!=null and query.companyName!=''">
+                AND tabA.companyName LIKE concat('%',#{query.companyName},'%')
+            </if>
+    </select>
+
+    <!--查询企业研究者列表数据-->
+    <select id="queryEnterpriseResearchers" resultType="com.nvxclouds.operation.biz.dto.EnterpriseResearchListDTO">
+            SELECT
+                us.id,
+                us.username userName,
+                us.company_name companyName,
+                us.enterprise_user_type enterpriseType,
+                concat(us.frist_name,us.last_name) realName,
+                us.phone,
+                us.email,
+                us.address,
+                us.id_code idCode,
+                us.status,
+                CASE
+                WHEN  rb.id ISNULL THEN FALSE
+                WHEN  rb.id='' THEN FALSE
+                ELSE TRUE
+                END isBlocked
+            FROM
+                users us LEFT JOIN researcher_blacklist rb ON rb.user_id = us.id
+            WHERE 1=1
+            AND us.user_type IN ('ENTERPRISE')
+            <if test="query.userName!=null and query.userName!=''">
+                AND us.username LIKE concat('%',#{query.userName},'%')
+            </if>
+            <if test="query.companyName!=null and query.companyName!=''">
+                AND us.company_name LIKE concat('%',#{query.companyName},'%')
+            </if>
+    </select>
+
+    <!--查询企业研究者子账号列表-->
+    <select id="queryEnterpriseChildAccounts" resultType="com.nvxclouds.operation.biz.dto.EnterpriseChildAccountListDTO">
+            SELECT
+                us.id,
+                us.username userName,
+                concat(us.frist_name,us.last_name) realName,
+                us.enterprise_user_type accountType,
+                us.department,
+                us.phone
+            FROM
+                users us
+            WHERE
+            us.parent_id = #{query.id}
+    </select>
+
+    <!--数据需求方排名列表查询-->
+    <select id="topXDataDemand" resultType="com.nvxclouds.operation.biz.dto.TopDTO">
+            SELECT
+                    ROW_NUMBER() OVER() as index,
+                    area,
+                    COUNT (*) dataCount
+            FROM
+                    users us
+            WHERE
+                    area != ''
+            GROUP BY area
+            ORDER BY dataCount DESC
+    </select>
+
+    <!--数据需求方分布图数据-->
+    <select id="dataMap" resultType="com.nvxclouds.operation.biz.dto.DataMapDTO">
+            SELECT
+                    area,
+                    COUNT (*) dataDemandCount
+            FROM
+                    users us
+            WHERE
+                    area != ''
+            GROUP BY area
+    </select>
+
+</mapper>

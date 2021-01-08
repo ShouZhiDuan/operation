@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.mapper.ProviderDataSortMapper">
+
+
+   <!--查询数据需求方排名数据-->
+    <select id="getProviderDataSortList" resultType="com.nvxclouds.operation.biz.domain.ProviderDataSort">
+           SELECT
+                pds.id,
+                pds.index_no indexNo,
+                pds.area,
+                pds.data_count dataCount,
+                pds.is_change isChange
+           FROM
+                provider_data_sort pds
+           WHERE 1=1
+           <if test="query.area!=null and query.area!=''">
+                AND pds.area LIKE concat("%",#{query.area},"%")
+           </if>
+           ORDER BY pds.index_no ASC
+           <if test="query.topNum!=null and query.topNum!=''">
+                LIMIT #{query.topNum}
+           </if>
+    </select>
+
+
+
+
+
+</mapper>

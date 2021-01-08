@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.mapper.DataNodesSortMapper">
+
+
+   <!--查询数据节点排名数据-->
+    <select id="getDataNodeSortList" resultType="com.nvxclouds.operation.biz.domain.DataNodesSort">
+           SELECT
+                dns.id,
+                dns.index_no indexNo,
+                dns.area,
+                dns.data_count dataCount,
+                dns.is_change isChange
+           FROM
+                data_nodes_sort dns
+           WHERE 1=1
+           <if test="query.area!=null and query.area!=''">
+                AND dns.area LIKE concat("%",#{query.area},"%")
+           </if>
+           ORDER BY dns.index_no ASC
+           <if test="query.topNum!=null and query.topNum!=''">
+                LIMIT #{query.topNum}
+           </if>
+    </select>
+
+
+
+
+
+</mapper>

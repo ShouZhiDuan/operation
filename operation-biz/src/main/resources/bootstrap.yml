@@ -1,0 +1,45 @@
+#服务配置
+server:
+  port: 10320
+spring:
+  application:
+    name: operation
+
+  cloud:
+    nacos:
+      config:
+        server-addr: 192.168.10.10:8848
+        ext-config:
+          - data-id: application_discovery.yaml
+          - data-id: sp_dev_mysql.yaml
+          - data-id: application-sentinel.yaml
+          - data-id: application_redis.yaml
+          - data-id: ms_control_kafka.yaml
+  main:
+    allow-bean-definition-overriding: true
+
+#  jackson:
+#    date-format: yyyy-MM-dd HH:mm:ss
+#    time-zone: GMT+8
+  mvc:
+    async:
+      request-timeout: 120000
+
+
+
+
+
+ribbon:
+  # 连接超时
+  ConnectTimeout: 120000
+  # 响应超时
+  ReadTimeout: 120000
+#mybatis:
+#  mapper-locations: classpath:mapper/*.xml
+#  configuration:
+#    #打印sql 语句
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    map-underscore-to-camel-case: true
+
+
+

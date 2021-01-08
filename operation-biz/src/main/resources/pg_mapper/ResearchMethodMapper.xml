@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.pg_mapper.ResearchMethodMapper">
+
+
+    <!--研究方法列表查询-->
+    <select id="methods" resultType="com.nvxclouds.operation.biz.dto.ResearchMethodListDTO">
+              SELECT
+                        rmm.id,
+                        rmm.name_db as name,
+                        rmm.created_time createdTime,
+                        rmm.type,
+                        rmm.description,
+                       (
+                        SELECT
+                                count(DISTINCT tabA.dataNodeId)
+                            FROM
+                            (
+                            SELECT
+                                rm.*,
+                                dns.id AS dataNodeId
+                            FROM
+                            research_method rm
+                            LEFT JOIN analysis_method am ON am.name = rm.name_db
+                            LEFT JOIN datasets dss ON dss.id = am.dataset_id
+                            LEFT JOIN datanodes dns ON dns.id = dss.datanode_id
+                            WHERE 1=1
+                            ) tabA WHERE tabA.id = rmm.id GROUP BY tabA.id
+                       ) as dataNodeCount
+            FROM
+                research_method rmm
+            WHERE
+                1 = 1
+                <if test="query.name!=null and query.name!=''">
+                    AND rmm.name_db LIKE concat('%',#{query.name},'%')
+                </if>
+                <if test="query.type!=null and query.type!=''">
+                    AND rmm.type = #{query.type}
+                </if>
+            ORDER BY
+                rmm.created_time DESC
+    </select>
+
+    <!--研究方法适用数据集列表-->
+    <select id="applyList" resultType="com.nvxclouds.operation.biz.dto.ResearchMethodDataListDTO">
+            SELECT
+              dns.name nodeName,
+              dss.name setName,
+              dss.filename,
+              substr(to_char(dss.created,'YYYY-MM-DD hh24:mi:ss'),0,20) createdTime,
+              dss.status
+            FROM
+            (SELECT * FROM analysis_method WHERE  name=#{nameDB}) tabA
+            LEFT JOIN datasets dss ON dss.id = tabA.dataset_id
+            LEFT JOIN datanodes dns ON dns.id = dss.datanode_id
+            WHERE 1=1
+    </select>
+
+
+    <!--数据集使用情况详情-->
+    <select id="setMethods" resultType="com.nvxclouds.operation.biz.dto.DataSetUsedListDTO">
+            SELECT
+                dus.method_name methodName,
+                dus.join_research_time joinResearchTime,
+                dus.resrearch_name resrearchName,
+                dus.research_organization researchOrganization,
+                dus.research_area researchArea
+            FROM
+                dataset_usage_statistics dus
+            WHERE
+            data_set_id = #{id}
+            ORDER BY dus.join_research_time DESC
+    </select>
+
+
+
+    <!--根据类型查询说所有的研究方法-->
+    <select id="getMethodListByType" resultType="com.nvxclouds.operation.biz.dto.ReaserchMethodListDTO">
+            SELECT
+                    rm.id,
+                    rm.name_db methodName,
+                    rm.type
+            FROM
+                    research_method rm
+            WHERE
+                    rm.blocked = TRUE
+            <if test="type!=null and type!=''">
+                    AND (rm.type = #{type} or rm.type = 3)
+            </if>
+
+    </select>
+
+
+
+
+</mapper>

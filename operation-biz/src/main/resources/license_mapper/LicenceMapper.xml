@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nvxclouds.operation.biz.license_mapper.LicencePackageMapper">
+    <!--查询许可证列表-->
+    <select id="listLicence" resultType="com.nvxclouds.operation.biz.dto.LicencePackageListDTO">
+        SELECT
+            lp.id,
+            lp.name,
+            lp.type,
+            lp.put_on_time putOnTime,
+            lp.price,
+            lp.status,
+            lp.description
+        FROM
+            licence_package lp
+        WHERE 1 = 1
+        <if test="query.status!=null and query.status!=''">
+            AND lp.status = #{query.status}
+        </if>
+        <if test="query.type!=null and query.type!=''">
+            AND lp.type = #{query.type}
+        </if>
+    </select>
+
+
+    <!--查询许可证订单列表-->
+    <select id="orderList" resultType="com.nvxclouds.operation.biz.dto.LicenceOrderDTO">
+        SELECT
+                lpo.id,
+                lpo.licence_package_id licencePackageId,
+                lp.name,
+                lp.type,
+                lpo.amount_money amountMoney,
+                lpo.amount_month amountMonth,
+                lpo.created createdTime,
+                lpo.status,
+                lpo.actived_time activedTime,
+                lpo.expire_time expireTime
+        FROM
+                licence_package_order lpo
+        LEFT JOIN licence_package lp ON lpo.licence_package_id = lp.id
+        WHERE 1=1
+        <if test="query.status!=null and query.status!=''">
+            AND lpo.status = #{query.status}
+        </if>
+        <if test="query.type!=null and query.type!=''">
+            AND lp.type = #{query.type}
+        </if>
+    </select>
+
+
+
+
+</mapper>
